@@ -28,15 +28,17 @@ trait Routes {
               pass              // password
            )
   }
-  def routes(implicit concurrent: Concurrent[IO], shift: ContextShift[IO]): IO[HttpRoutes[IO]] = {
+  def routes(implicit concurrent: Concurrent[IO], shift: ContextShift[IO]): IO[HttpApp[IO]] = {
     for {
       _ <- IO(println("Setting up routes"))
       xa <- getXA
       todosAlg = new TodoDB[IO](xa)
-      swaggerMiddleware = SwaggerSupport[IO].createRhoMiddleware()
+      swaggerMiddleware = SwaggerSupport[IO].createRhoMiddleware(
+        basePath = sys.env.get("STAGE").map(stage => s"/$stage/")
+      )
       rhoRoutes: HttpRoutes[IO] = TodoRhoService[IO](todosAlg).toRoutes(swaggerMiddleware)
       migrationService: HttpRoutes[IO] = MigrationService[IO](xa)
-    } yield (rhoRoutes <+> migrationService)
+    } yield CORS((rhoRoutes <+> migrationService).orNotFound)
   }
 }
 
@@ -44,17 +46,16 @@ object HttpEntryPoint extends IOApp with Routes {
   override def run(args: List[String]): IO[ExitCode] = {
     for {
       r <- routes
-      serve <- BlazeServerBuilder[IO]
+      exitCode <- BlazeServerBuilder[IO]
         .bindHttp(8080, "localhost")
-        .withHttpApp(CORS(r.orNotFound))
-        .serve
-        .compile
-        .drain
+        .withHttpApp(r)
+        .resource
+        .use(_ => IO.never)
         .as(ExitCode.Success)
-    } yield serve
+    } yield exitCode
   }
 }
 
 class LambdaEntryPoint extends LambdaHandler with Routes {
-  def run: IO[HttpApp[IO]] = routes.map(_.orNotFound)
+  def run: IO[HttpApp[IO]] = routes
 }

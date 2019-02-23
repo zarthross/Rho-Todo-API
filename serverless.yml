@@ -7,7 +7,7 @@ provider:
   name: aws
   runtime: java8
   region: us-west-2
-  stage: dev
+  stage: ${opt:stage, 'dev'}
 # you can add statements to the Lambda function's IAM Role here
   iamRoleStatements:
   - Effect: "Allow"
@@ -23,6 +23,7 @@ provider:
     postgresDatabase: "todoDB"
     postgresUser: master
     postgresPassword: master1234
+    STAGE: ${opt:stage, 'dev'}
 
 package:
   artifact: target/scala-2.12/http4s-todo-lambda.jar
