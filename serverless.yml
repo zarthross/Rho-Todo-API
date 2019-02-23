@@ -1,0 +1,127 @@
+service: http4s-todo-lambda
+
+plugins:
+  - serverless-sam
+
+provider:
+  name: aws
+  runtime: java8
+  region: us-west-2
+  stage: dev
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+  - Effect: "Allow"
+    Action:
+      - ec2:CreateNetworkInterface
+      - ec2:DescribeNetworkInterfaces
+      - ec2:DeleteNetworkInterface
+    Resource: "*"
+
+  environment:
+    postgresEndpoint:
+      "Fn::Join": [":", ["Fn::GetAtt": [ServerlessRDSCluster, Endpoint.Address], "Fn::GetAtt": [ServerlessRDSCluster, Endpoint.Port]]]
+    postgresDatabase: "todoDB"
+    postgresUser: master
+    postgresPassword: master1234
+
+package:
+  artifact: target/scala-2.12/http4s-todo-lambda.jar
+
+functions:
+  api:
+    handler: hello.todo.Lambda$EntryPoint::handle
+    timeout: 30
+    vpc:
+      securityGroupIds:
+        - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
+      subnetIds:
+        - Ref: ServerlessSubnetA
+        - Ref: ServerlessSubnetB
+        - Ref: ServerlessSubnetC
+    environment:
+      stage: ${opt:stage}
+    events:
+      - http:
+          path: "{proxy+}"
+          method: any
+          cors:
+            - enabled: true
+#      Uncomment below to keep the application warm
+#      - schedule:
+#          rate: rate(4 minutes)
+#          input:
+#            httpMethod: GET
+#            path: /hello/keepWarm
+
+resources:
+    Resources:
+      ServerlessVPC:
+        Type: AWS::EC2::VPC
+        Properties:
+          CidrBlock: "10.0.0.0/16"
+      ServerlessSubnetA:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId:
+            Ref: ServerlessVPC
+          AvailabilityZone: ${self:provider.region}a
+          CidrBlock: "10.0.0.0/24"
+      ServerlessSubnetB:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId:
+            Ref: ServerlessVPC
+          AvailabilityZone: ${self:provider.region}b
+          CidrBlock: "10.0.1.0/24"
+      ServerlessSubnetC:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId:
+            Ref: ServerlessVPC
+          AvailabilityZone: ${self:provider.region}c
+          CidrBlock: "10.0.2.0/24"
+      ServerlessSecurityGroup:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+          GroupDescription: SecurityGroup for Serverless Functions
+          VpcId:
+            Ref: ServerlessVPC
+      ServerlessStorageSecurityGroup:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+          GroupDescription: Ingress for RDS Instance
+          VpcId:
+            Ref: ServerlessVPC
+          SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: '5432'
+            ToPort: '5432'
+            SourceSecurityGroupId:
+              Ref: ServerlessSecurityGroup
+      ServerlessRDSSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties:
+          DBSubnetGroupDescription: "RDS Subnet Group"
+          SubnetIds:
+          - Ref: ServerlessSubnetA
+          - Ref: ServerlessSubnetB
+          - Ref: ServerlessSubnetC
+      ServerlessRDSCluster:
+        DependsOn: ServerlessStorageSecurityGroup
+        Type: AWS::RDS::DBInstance
+        Properties:
+          Engine: Postgres
+          DBName: cool
+          MasterUsername: master
+          MasterUserPassword: master1234
+          DBInstanceClass: db.t2.micro
+          AllocatedStorage: 20
+          VPCSecurityGroups:
+          - "Fn::GetAtt": ServerlessStorageSecurityGroup.GroupId
+          DBSubnetGroupName:
+            Ref: ServerlessRDSSubnetGroup

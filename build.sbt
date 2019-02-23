@@ -1,8 +1,23 @@
 
+scalaVersion := "2.12.8"
+name := "http4s-todo-lambda"
+assemblyJarName in assembly := "http4s-todo-lambda.jar"
+
+scalacOptions += "-Ypartial-unification"
+
+val http4sVersion = "0.20.0-M6"
+val rhoVersion = "0.19.0-M6"
+val http4Lambda = "0.4.0-M6"
+
 libraryDependencies ++= Seq(
-  "org.http4s" %% "http4s-blaze-server" % "0.20.0-M4",
-  "org.http4s" %% "http4s-circe" % "0.20.0-M4",
-  "org.http4s" %% "rho-swagger" % "0.19.0-M4"
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+  "org.http4s" %% "http4s-circe" % http4sVersion,
+  "org.http4s" %% "rho-swagger" % rhoVersion,
+  "io.hydrosphere" %% "typed-sql" % "0.1.0",
+  "org.tpolecat" %% "doobie-postgres" % "0.6.0",
+  "io.github.howardjohn" %% "http4s-lambda" % http4Lambda,
+  "org.slf4j" % "slf4j-simple" % "1.7.25"
 )
 
 val circeVersion = "0.10.0"

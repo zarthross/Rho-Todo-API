@@ -2,3 +2,7 @@ target
 .idea
 .metals
 .bloop
+node_modules
+package-lock.json
+.serverless
+/template.yml
