@@ -21,7 +21,6 @@ trait Routes {
       }
       user <- IO(sys.env.getOrElse("postgresUser", "postgres"))
       pass <- IO(sys.env.getOrElse("postgresPassword", "postgres"))
-      _ = println(s"Config: ${jdbc} | ${user}")
     } yield Transactor.fromDriverManager[IO](
               "org.postgresql.Driver", // driver classname
               jdbc,             // connect URL (driver-specific)
@@ -56,11 +55,6 @@ object HttpEntryPoint extends IOApp with Routes {
   }
 }
 
-import _root_.io.github.howardjohn.lambda.http4s.Http4sLambdaHandler
-
-object Lambda extends org.http4s.dsl.Http4sDsl[IO] with Routes {
-  implicit val contextShift: ContextShift[IO] =   IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
-
-  // Define the entry point for Lambda
-  class EntryPoint extends Http4sLambdaHandler(routes.unsafeRunSync)
+class LambdaEntryPoint extends LambdaHandler with Routes {
+  def run: IO[HttpApp[IO]] = routes.map(_.orNotFound)
 }

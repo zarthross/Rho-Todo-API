@@ -16,7 +16,6 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "rho-swagger" % rhoVersion,
   "io.hydrosphere" %% "typed-sql" % "0.1.0",
   "org.tpolecat" %% "doobie-postgres" % "0.6.0",
-  "io.github.howardjohn" %% "http4s-lambda" % http4Lambda,
   "org.slf4j" % "slf4j-simple" % "1.7.25"
 )
 
@@ -26,3 +25,5 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-generic",
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
+
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M1")

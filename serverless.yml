@@ -29,7 +29,7 @@ package:
 
 functions:
   api:
-    handler: hello.todo.Lambda$EntryPoint::handle
+    handler: hello.todo.LambdaEntryPoint::handle
     timeout: 30
     vpc:
       securityGroupIds:
