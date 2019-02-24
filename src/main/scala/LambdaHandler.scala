@@ -93,7 +93,7 @@ case class ProxyRequest(
       httpMethod,
       url,
       headers = headers.map(toHeaders).getOrElse(Headers.empty),
-      body = body.map(encodeBody).getOrElse(EmptyBody)
+      body = body.map(encodeBody(isBase64Encoded)).getOrElse(EmptyBody)
     )
   }
 
@@ -104,7 +104,14 @@ case class ProxyRequest(
       }.toList
     }
 
-  private def encodeBody(body: String) = Stream(body).through(text.utf8Encode)
+  private def encodeBody(isBase64Encoded: Boolean)(body: String) = {
+    if(isBase64Encoded) {
+      Stream.emits(java.util.Base64.getDecoder.decode(body))
+    }
+    else {
+      Stream(body).through(text.utf8Encode)
+    }
+  }
 }
 
 case class ProxyResponse(
@@ -117,8 +124,6 @@ object ProxyResponse {
   def toResponse[F[_]: Sync](resp: Response[F]): F[ProxyResponse] = {
     import org.http4s.headers._
     (resp.contentType match {
-      case Some(`Content-Type`(MediaType.application.json, _)) =>
-        resp.as[String].map(_ -> false)
       case Some(contentType) if contentType.mediaType.binary =>
         resp.as[Array[Byte]]
           .map(java.util.Base64.getEncoder.encodeToString)
