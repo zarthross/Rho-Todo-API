@@ -36,7 +36,8 @@ trait Routes {
       swaggerMiddleware = SwaggerSupport[IO].createRhoMiddleware(
         basePath = sys.env.get("STAGE").map(stage => s"/$stage/")
       )
-      rhoRoutes: HttpRoutes[IO] = TodoRhoService[IO](todosAlg).toRoutes(swaggerMiddleware)
+      testService = new TestService[IO]
+      rhoRoutes: HttpRoutes[IO] = TodoRhoService[IO](todosAlg).and(testService).toRoutes(swaggerMiddleware)
       migrationService: HttpRoutes[IO] = MigrationService[IO](xa)
     } yield CORS((rhoRoutes <+> migrationService).orNotFound)
   }

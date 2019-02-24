@@ -115,16 +115,24 @@ case class ProxyResponse(
 )
 object ProxyResponse {
   def toResponse[F[_]: Sync](resp: Response[F]): F[ProxyResponse] = {
-    resp
-      .as[String]
-      .map { body =>
-        ProxyResponse(
-            resp.status.code,
-            headers = resp.headers
-              .map(h => h.name.value -> h.value)
-              .toMap,
-            body,
-            false)
-      }
+    import org.http4s.headers._
+    (resp.contentType match {
+      case Some(`Content-Type`(MediaType.application.json, _)) =>
+        resp.as[String].map(_ -> false)
+      case Some(contentType) if contentType.mediaType.binary =>
+        resp.as[Array[Byte]]
+          .map(java.util.Base64.getEncoder.encodeToString)
+          .map(_ -> true)
+      case _ => resp.as[String].map(_ -> false)
+    })
+    .map { case (body, enc) =>
+      ProxyResponse(
+          resp.status.code,
+          headers = resp.headers
+            .map(h => h.name.value -> h.value)
+            .toMap,
+          body,
+          isBase64Encoded = enc)
+    }
   }
 }

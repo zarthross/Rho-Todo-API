@@ -16,7 +16,11 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "rho-swagger" % rhoVersion,
   "io.hydrosphere" %% "typed-sql" % "0.1.0",
   "org.tpolecat" %% "doobie-postgres" % "0.6.0",
-  "org.slf4j" % "slf4j-simple" % "1.7.25"
+  "org.slf4j" % "slf4j-simple" % "1.7.25",
+
+
+	"org.scala-lang.modules" %% "scala-xml" % "1.1.1",
+  "org.http4s" %% "http4s-scala-xml" % http4sVersion,
 )
 
 val circeVersion = "0.10.0"

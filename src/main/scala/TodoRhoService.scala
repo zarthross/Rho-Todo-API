@@ -12,7 +12,7 @@ import org.http4s.rho.swagger.SwaggerSyntax
 class TodoRhoService[F[+_]: Sync](todos: TodoAlg[F])
   extends RhoRoutes[F]
   with SwaggerSyntax[F]
-  with CirceEntityEncoder 
+  with CirceEntityEncoder
   with CirceEntityDecoder {
 
   implicit val todoEncoder: Encoder[Todo] = deriveEncoder[Todo]
