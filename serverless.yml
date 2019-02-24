@@ -2,6 +2,12 @@ service: http4s-todo-lambda
 
 plugins:
   - serverless-sam
+  - serverless-apigw-binary
+
+custom:
+ apigwBinary:
+    types:
+      - '*/*'
 
 provider:
   name: aws
